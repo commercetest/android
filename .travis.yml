@@ -14,5 +14,4 @@ install:
 before_script:
   - export ANDROID_NDK_HOME=$ANDROID_HOME/ndk-bundle
 script:
-  - ./builder_setup.sh
   - ./build_app.sh 
