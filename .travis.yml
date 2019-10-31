@@ -1,5 +1,9 @@
 language: android
 dist: trusty
+
+git:
+  submodules: false
+
 android:
   components:
     - build-tools-27.0.3
@@ -8,9 +12,7 @@ android:
 
 install:
   - echo y | sdkmanager "ndk-bundle"
-  - echo y | sdkmanager "cmake;3.6.4111459"
-  - echo y | sdkmanager --channel=3 --channel=1 "cmake;3.10.2.4988404"
-  - echo y | sdkmanager "lldb;3.1"
+
 before_script:
   - export ANDROID_NDK_HOME=$ANDROID_HOME/ndk-bundle
 script:
