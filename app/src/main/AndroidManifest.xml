@@ -6,10 +6,12 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <application
         android:name=".EduVPNApplication"
         android:allowBackup="true"
+        android:extractNativeLibs="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
@@ -61,7 +63,7 @@
 
         <service
             android:name="de.blinkt.openvpn.OpenVPNTileService"
-            android:icon="@drawable/ic_quick"
+            android:icon="@drawable/logo_black"
             android:label="@string/qs_title"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
             android:value="true">
@@ -77,7 +79,6 @@
         <service
             android:name="de.blinkt.openvpn.core.OpenVPNStatusService"
             android:exported="false" />
-
 
         <activity
             android:name="de.blinkt.openvpn.api.GrantPermissionsActivity"
@@ -124,6 +125,38 @@
                 android:value=".MainActivity" />
 
         </activity>
+
+        <activity
+            android:name=".LicenseActivity"
+            android:launchMode="singleTask"
+            android:theme="@style/AppTheme.NoActionBar" />
+    
+        <activity
+            android:name="net.openid.appauth.RedirectUriReceiverActivity"
+            tools:node="replace">
+            <intent-filter
+                android:autoVerify="true"
+                tools:targetApi="m">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="${appAuthRedirectHost}"
+                    android:path="/api/callback"
+                    android:scheme="https" />
+            </intent-filter>
+        </activity>
+
+        <!-- Remove the MainActivity of the ICS-OpenVPN library-->
+        <activity
+            android:name="de.blinkt.openvpn.activities.MainActivity"
+            tools:node="remove"/>
+
+        <meta-data
+            android:name="android.content.APP_RESTRICTIONS"
+            android:resource="@xml/app_restrictions" />
     </application>
 
 </manifest>

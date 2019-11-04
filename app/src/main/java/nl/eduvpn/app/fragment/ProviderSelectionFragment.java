@@ -17,30 +17,28 @@
 
 package nl.eduvpn.app.fragment;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.Fragment;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import org.json.JSONObject;
 
 import javax.inject.Inject;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.Unbinder;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import nl.eduvpn.app.Constants;
 import nl.eduvpn.app.EduVPNApplication;
 import nl.eduvpn.app.R;
 import nl.eduvpn.app.adapter.ProviderAdapter;
+import nl.eduvpn.app.base.BaseFragment;
+import nl.eduvpn.app.databinding.FragmentProviderSelectionBinding;
 import nl.eduvpn.app.entity.AuthorizationType;
 import nl.eduvpn.app.entity.DiscoveredAPI;
 import nl.eduvpn.app.entity.Instance;
@@ -58,22 +56,10 @@ import nl.eduvpn.app.utils.Log;
  * The fragment showing the provider list.
  * Created by Daniel Zolnai on 2016-10-07.
  */
-public class ProviderSelectionFragment extends Fragment {
+public class ProviderSelectionFragment extends BaseFragment<FragmentProviderSelectionBinding> {
 
     private static final String TAG = ProviderSelectionFragment.class.getName();
     public static final String EXTRA_AUTHORIZATION_TYPE = "extra_authorization_type";
-
-    @BindView(R.id.provider_list)
-    protected RecyclerView _providerList;
-
-    @BindView(R.id.provider_status)
-    protected TextView _providerStatus;
-
-    @BindView(R.id.header)
-    protected TextView _header;
-
-    @BindView(R.id.description)
-    protected TextView _description;
 
     @Inject
     protected ConfigurationService _configurationService;
@@ -93,12 +79,17 @@ public class ProviderSelectionFragment extends Fragment {
     @Inject
     protected PreferencesService _preferencesService;
 
-    private Unbinder _unbinder;
-
     @AuthorizationType
     private int _authorizationType;
 
     private RecyclerView.AdapterDataObserver _dataObserver;
+
+    private ProgressDialog _currentDialog;
+
+    @Override
+    protected int getLayout() {
+        return R.layout.fragment_provider_selection;
+    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -119,71 +110,78 @@ public class ProviderSelectionFragment extends Fragment {
     }
 
     @Override
-    public void onSaveInstanceState(Bundle outState) {
+    public void onDestroy() {
+        super.onDestroy();
+        if (_currentDialog != null) {
+            _currentDialog.dismiss();
+        }
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        if (_currentDialog != null) {
+            _currentDialog.show();
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putInt(EXTRA_AUTHORIZATION_TYPE, _authorizationType);
     }
 
-    @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_provider_selection, container, false);
-        _unbinder = ButterKnife.bind(this, view);
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
         EduVPNApplication.get(view.getContext()).component().inject(this);
         if (_authorizationType == AuthorizationType.LOCAL) {
-            _header.setText(R.string.select_your_institution_title);
-            _description.setVisibility(View.GONE);
+            binding.header.setText(R.string.select_your_institution_title);
+            binding.description.setVisibility(View.GONE);
         } else {
-            _header.setText(R.string.select_your_country_title);
-            _description.setVisibility(View.VISIBLE);
+            binding.header.setText(R.string.select_your_country_title);
+            binding.description.setVisibility(View.VISIBLE);
         }
-        _providerList.setHasFixedSize(true);
-        _providerList.setLayoutManager(new LinearLayoutManager(view.getContext(), LinearLayoutManager.VERTICAL, false));
+        binding.providerList.setHasFixedSize(true);
+        binding.providerList.setLayoutManager(new LinearLayoutManager(view.getContext(), LinearLayoutManager.VERTICAL, false));
         final ProviderAdapter adapter = new ProviderAdapter(_configurationService, _authorizationType);
-        _providerList.setAdapter(adapter);
-        ItemClickSupport.addTo(_providerList).setOnItemClickListener(new ItemClickSupport.OnItemClickListener() {
-            @Override
-            public void onItemClicked(RecyclerView recyclerView, int position, View v) {
-                Instance instance = ((ProviderAdapter)recyclerView.getAdapter()).getItem(position);
-                if (instance == null) {
-                    // Should never happen
-                    View mainView = getView();
-                    if (mainView != null) {
-                        Snackbar.make(mainView, R.string.error_selected_instance_not_found, Snackbar.LENGTH_LONG).show();
-                    }
-                    Log.e(TAG, "Instance not found for position: " + String.valueOf(position));
-                } else {
-                    _connectToApi(instance);
+        binding.providerList.setAdapter(adapter);
+        ItemClickSupport.addTo(binding.providerList).setOnItemClickListener((recyclerView, position, v) -> {
+            Instance instance = ((ProviderAdapter)recyclerView.getAdapter()).getItem(position);
+            if (instance == null) {
+                // Should never happen
+                View mainView = getView();
+                if (mainView != null) {
+                    Snackbar.make(mainView, R.string.error_selected_instance_not_found, Snackbar.LENGTH_LONG).show();
                 }
+                Log.e(TAG, "Instance not found for position: " + position);
+            } else {
+                _connectToApi(instance);
             }
         });
         // When clicked long on an item, display its name in a toast.
-        ItemClickSupport.addTo(_providerList).setOnItemLongClickListener(new ItemClickSupport.OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClicked(RecyclerView recyclerView, int position, View v) {
-                Instance instance = ((ProviderAdapter)recyclerView.getAdapter()).getItem(position);
-                String name = instance == null ? getString(R.string.display_other_name) : instance.getDisplayName();
-                Toast.makeText(recyclerView.getContext(), name, Toast.LENGTH_LONG).show();
-                return true;
-            }
+        ItemClickSupport.addTo(binding.providerList).setOnItemLongClickListener((recyclerView, position, v) -> {
+            Instance instance = ((ProviderAdapter)recyclerView.getAdapter()).getItem(position);
+            String name = instance == null ? getString(R.string.display_other_name) : instance.getDisplayName();
+            Toast.makeText(recyclerView.getContext(), name, Toast.LENGTH_LONG).show();
+            return true;
         });
         adapter.registerAdapterDataObserver(_dataObserver = new RecyclerView.AdapterDataObserver() {
             @Override
             public void onChanged() {
                 if (adapter.getItemCount() > 0) {
-                    _providerStatus.setVisibility(View.GONE);
-                } else if (adapter.isDiscoveryPending()){
-                    _providerStatus.setText(R.string.discovering_providers);
-                    _providerStatus.setVisibility(View.VISIBLE);
+                    binding.providerStatus.setVisibility(View.GONE);
+                } else if (adapter.isDiscoveryPending()) {
+                    binding.providerStatus.setText(R.string.discovering_providers);
+                    binding.providerStatus.setVisibility(View.VISIBLE);
                 } else {
-                    _providerStatus.setText(R.string.no_provider_found);
-                    _providerStatus.setVisibility(View.VISIBLE);
+                    binding.providerStatus.setText(R.string.no_provider_found);
+                    binding.providerStatus.setVisibility(View.VISIBLE);
                 }
             }
         });
         // Trigger initial status
         _dataObserver.onChanged();
-        return view;
     }
 
     /**
@@ -196,12 +194,16 @@ public class ProviderSelectionFragment extends Fragment {
         // If there's only a discovered API, initiate the connection
         if (discoveredAPI != null) {
             Log.d(TAG, "Cached discovered API found.");
-            _connectionService.initiateConnection(getActivity(), instance, discoveredAPI);
+            Activity activity = getActivity();
+            if (activity != null && !activity.isFinishing()) {
+                _connectionService.initiateConnection(activity, instance, discoveredAPI);
+            }
             return;
         }
         // If no discovered API, fetch it first, then initiate the connection for the login
         Log.d(TAG, "No cached discovered API found, continuing with discovery.");
         final ProgressDialog dialog = ProgressDialog.show(getContext(), getString(R.string.progress_dialog_title), getString(R.string.api_discovery_message), true);
+        _currentDialog = dialog;
         // Discover the API
         _apiService.getJSON(instance.getSanitizedBaseURI() + Constants.API_DISCOVERY_POSTFIX, null, new APIService.Callback<JSONObject>() {
             @Override
@@ -209,6 +211,7 @@ public class ProviderSelectionFragment extends Fragment {
                 try {
                     DiscoveredAPI discoveredAPI = _serializerService.deserializeDiscoveredAPI(result);
                     dialog.dismiss();
+                    _currentDialog = null;
                     // Cache the result
                     _historyService.cacheDiscoveredAPI(instance.getSanitizedBaseURI(), discoveredAPI);
                     _connectionService.initiateConnection(getActivity(), instance, discoveredAPI);
@@ -216,30 +219,27 @@ public class ProviderSelectionFragment extends Fragment {
                     Log.e(TAG, "Error parsing discovered API!", ex);
                     ErrorDialog.show(getContext(), R.string.error_dialog_title, ex.toString());
                     dialog.dismiss();
+                    _currentDialog = null;
                 }
             }
 
             @Override
             public void onError(String errorMessage) {
                 dialog.dismiss();
+                _currentDialog = null;
                 Log.e(TAG, "Error while fetching discovered API: " + errorMessage);
                 ErrorDialog.show(getContext(), R.string.error_dialog_title, errorMessage);
             }
         });
     }
 
-    @Override
-    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-    }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        if (_providerList != null && _providerList.getAdapter() != null && _dataObserver != null) {
-            _providerList.getAdapter().unregisterAdapterDataObserver(_dataObserver);
+        if (binding.providerList != null && binding.providerList.getAdapter() != null && _dataObserver != null) {
+            binding.providerList.getAdapter().unregisterAdapterDataObserver(_dataObserver);
             _dataObserver = null;
         }
-        _unbinder.unbind();
     }
 }

@@ -7,15 +7,15 @@ export JAVA_HOME=$(/usr/libexec/java_home -v1.8)
 
 SDK_DIR=${HOME}/android-sdk
 
-# current as of 20180628
+# current as of 20191028
 # see https://developer.android.com/studio/#downloads "Command line tools only"
 SDK_VERSION=4333796
 
-# see app/build.gradle for "buildToolsVersion"
-BUILD_TOOLS_VERSION=27.0.3
+# Always use latest from https://developer.android.com/studio/releases/build-tools
+BUILD_TOOLS_VERSION=29.0.2
 
 # see app/build.gradle for "targetSdkVersion"
-PLATFORM_VERSION=27
+PLATFORM_VERSION=29
 
 # should not require modification...
 SDK_URL=https://dl.google.com/android/repository/sdk-tools-linux-${SDK_VERSION}.zip

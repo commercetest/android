@@ -1,15 +1,16 @@
 apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-kapt'
 
 android {
-    compileSdkVersion 27
-    buildToolsVersion "27.0.3"
+    compileSdkVersion 29
 
     defaultConfig {
         applicationId "nl.eduvpn.app"
         minSdkVersion 21
-        targetSdkVersion 27
-        versionCode 9
-        versionName "1.2.3"
+        targetSdkVersion 29
+        versionCode 10
+        versionName "1.3"
         buildConfigField "String", "SECURE_INTERNET_DISCOVERY_URL", "\"https://static.eduvpn.nl/disco/secure_internet.json\""
         buildConfigField "String", "INSTITUTE_ACCESS_DISCOVERY_URL", "\"https://static.eduvpn.nl/disco/institute_access.json\""
         buildConfigField "String", "SIGNATURE_URL_POSTFIX", "\".sig\""
@@ -18,15 +19,22 @@ android {
 
         // API
         buildConfigField "String", "OAUTH_CLIENT_ID", "\"org.eduvpn.app.android\""
-        buildConfigField "String", "OAUTH_REDIRECT_URI", "\"org.eduvpn.app:/api/callback\""
+        buildConfigField "String", "OAUTH_REDIRECT_URI", "\"https://android.app.eduvpn.org/api/callback\""
         buildConfigField "String", "OAUTH_SCOPE", "\"config\""
         buildConfigField "String", "CERTIFICATE_DISPLAY_NAME", "\"eduVPN for Android\""
 
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders = [
-                'appAuthRedirectScheme': 'org.eduvpn.app'
+                'appAuthRedirectHost': 'android.app.eduvpn.org',
         ]
-        missingDimensionStrategy 'implementation', 'noovpn3'
+        missingDimensionStrategy 'implementation', 'ui' // Skeleton is no option for us because we need the log activity
+
+        // This excludes some pretty old ABIs such armeabi or mips. LibSodium-JNI still includes binaries for these, which
+        // leads to some devices selecting these as the app ABI, but the OpenVPN library did not include a binary for these,
+        // thus resulting in a crash.
+        ndk {
+            abiFilters 'arm64-v8a', 'x86', 'x86_64', 'armeabi-v7a'
+        }
     }
 
     buildTypes {
@@ -34,6 +42,10 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+
+    dataBinding {
+        enabled true
     }
 
     flavorDimensions "product"
@@ -57,11 +69,10 @@ android {
             // API discovery is disabled, and only custom URLs can be entered.
             buildConfigField "boolean", "API_DISCOVERY_ENABLED", "false"
             buildConfigField "String", "OAUTH_CLIENT_ID", "\"org.letsconnect-vpn.app.android\""
-            buildConfigField "String", "OAUTH_REDIRECT_URI", "\"org.letsconnect-vpn.app:/api/callback\""
+            buildConfigField "String", "OAUTH_REDIRECT_URI", "\"https://android.app.letsconnect-vpn.org/api/callback\""
             buildConfigField "String", "CERTIFICATE_DISPLAY_NAME", "\"Let's Connect! for Android\""
-
             manifestPlaceholders = [
-                    'appAuthRedirectScheme': 'org.letsconnect-vpn.app'
+                    'appAuthRedirectHost': 'android.app.letsconnect-vpn.org',
             ]
         }
     }
@@ -79,41 +90,37 @@ android {
     }
 }
 
-def supportLibVersion = "27.1.1" // Please try to stay in sync with the version used in the ics-openvpn module
-def butterknifeVersion = "8.8.1"
-def daggerVersion = "2.15"
+def daggerVersion = "2.25.2"
+def okHttpVersion = "4.2.2"
 
 dependencies {
     // The VPN library
     implementation project(path: ':ics-openvpn-main')
-
-    implementation "com.android.support:appcompat-v7:$supportLibVersion"
-    implementation "com.android.support:design:$supportLibVersion"
-    implementation "com.android.support:recyclerview-v7:$supportLibVersion"
-    implementation "com.android.support:customtabs:$supportLibVersion"
+    // Please try to stay in sync with the versions used in the ics-openvpn module
+    implementation "androidx.appcompat:appcompat:1.1.0"
+    implementation "androidx.recyclerview:recyclerview:1.0.0"
+    implementation 'com.google.android.material:material:1.0.0'
+    implementation "androidx.browser:browser:1.0.0" // Custom tabs
     // OAuth client
     implementation 'net.openid:appauth:0.7.1'
     // Secure preferences
     implementation 'com.scottyab:secure-preferences-lib:0.1.4'
     // HTTP client
-    implementation 'com.squareup.okhttp3:okhttp:3.8.1'
-    // View injection
-    implementation "com.jakewharton:butterknife:$butterknifeVersion"
-    annotationProcessor "com.jakewharton:butterknife-compiler:$butterknifeVersion"
+    implementation "com.squareup.okhttp3:okhttp:$okHttpVersion"
     // Dependency injection
     implementation "com.google.dagger:dagger:$daggerVersion"
-    annotationProcessor "com.google.dagger:dagger-compiler:$daggerVersion"
+    kapt "com.google.dagger:dagger-compiler:$daggerVersion"
     // Image loader
-    implementation 'com.squareup.picasso:picasso:2.5.2'
+    implementation 'com.squareup.picasso:picasso:2.71828'
     // Public key verification
     implementation "com.github.joshjdevl.libsodiumjni:libsodium-jni-aar:1.0.6@aar"
     // Reactive extensions for asynchronous events
-    implementation 'io.reactivex.rxjava2:rxandroid:2.0.1'
-    implementation 'io.reactivex.rxjava2:rxjava:2.1.2'
+    implementation 'io.reactivex.rxjava2:rxandroid:2.1.1'
+    implementation 'io.reactivex.rxjava2:rxjava:2.2.12'
 
     // All testing related libraries
     testImplementation 'junit:junit:4.12'
-    androidTestImplementation "com.android.support:support-annotations:$supportLibVersion"
-    androidTestImplementation 'com.android.support.test:runner:0.5'
-    androidTestImplementation 'com.android.support.test:rules:0.5'
+    androidTestImplementation 'androidx.test:runner:1.1.0'
+    androidTestImplementation 'androidx.test:rules:1.1.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
 }

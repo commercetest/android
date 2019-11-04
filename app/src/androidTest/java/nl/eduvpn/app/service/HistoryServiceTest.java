@@ -21,9 +21,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
-import android.support.test.InstrumentationRegistry;
-import android.support.test.filters.LargeTest;
-import android.support.test.runner.AndroidJUnit4;
 
 import net.openid.appauth.AuthState;
 import net.openid.appauth.AuthorizationServiceConfiguration;
@@ -36,6 +33,9 @@ import org.junit.runner.RunWith;
 
 import java.util.Random;
 
+import androidx.test.InstrumentationRegistry;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.filters.LargeTest;
 import nl.eduvpn.app.entity.AuthorizationType;
 import nl.eduvpn.app.entity.DiscoveredAPI;
 import nl.eduvpn.app.entity.Instance;
@@ -102,7 +102,7 @@ public class HistoryServiceTest {
             String profileId = "vpn_profile";
             String profileUUID = "ABCD-1234-DEFG-5678";
             Instance instance = new Instance(baseURI + i, "displayName", null, AuthorizationType.DISTRIBUTED, true);
-            Profile profile = new Profile("displayName", profileId, false);
+            Profile profile = new Profile("displayName", profileId);
             SavedProfile savedProfile = new SavedProfile(instance, profile, profileUUID);
             _historyService.cacheSavedProfile(savedProfile);
             _historyService.cacheAuthenticationState(instance, new AuthState());
@@ -148,7 +148,7 @@ public class HistoryServiceTest {
         String profileId = "vpn_profile";
         String profileUUID = "ABCD-1234-DEFG-5678";
         Instance instance = new Instance(baseURI, "displayName", null, AuthorizationType.DISTRIBUTED, true);
-        Profile profile = new Profile("displayName", profileId, false);
+        Profile profile = new Profile("displayName", profileId);
         SavedProfile savedProfile = new SavedProfile(instance, profile, profileUUID);
         _historyService.cacheSavedProfile(savedProfile);
         _reloadHistoryService(false);
