@@ -20,4 +20,5 @@ install:
 before_script:
   - export ANDROID_NDK_HOME=$ANDROID_HOME/ndk-bundle
 script:
-  - ./build_app_in_ci.sh
+  - git submodule update --init --recursive
+  - ./gradlew assembleBasicRelease
