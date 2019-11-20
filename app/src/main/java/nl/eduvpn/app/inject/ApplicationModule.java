@@ -39,6 +39,7 @@ import nl.eduvpn.app.service.SecurityService;
 import nl.eduvpn.app.service.SerializerService;
 import nl.eduvpn.app.service.VPNService;
 import nl.eduvpn.app.utils.Log;
+import nl.eduvpn.app.viewmodel.ViewModelFactory;
 import okhttp3.OkHttpClient;
 
 /**
@@ -75,8 +76,8 @@ public class ApplicationModule {
 
     @Provides
     @Singleton
-    protected PreferencesService providePreferencesService(SerializerService serializerService, SharedPreferences sharedPreferences) {
-        return new PreferencesService(serializerService, sharedPreferences);
+    protected PreferencesService providePreferencesService(Context context, SerializerService serializerService, SharedPreferences sharedPreferences) {
+        return new PreferencesService(context, serializerService, sharedPreferences);
     }
 
     @Provides
@@ -121,6 +122,8 @@ public class ApplicationModule {
     protected OkHttpClient provideHttpClient() {
         OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
                 .retryOnConnectionFailure(true)
+                .followRedirects(true)
+                .followSslRedirects(true)
                 .connectTimeout(10, TimeUnit.SECONDS)
                 .writeTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
@@ -139,5 +142,20 @@ public class ApplicationModule {
                     }
                 });
         return clientBuilder.build();
+    }
+
+    @Provides
+    @Singleton
+    protected ViewModelFactory provideViewModelFactory(Context context,
+                                                       APIService apiService,
+                                                       SerializerService serializerService,
+                                                       ConfigurationService configurationService,
+                                                       HistoryService historyService,
+                                                       PreferencesService preferencesService,
+                                                       ConnectionService connectionService,
+                                                       VPNService vpnService) {
+        return new ViewModelFactory(context, apiService, serializerService,
+                configurationService, historyService, preferencesService, connectionService,
+                vpnService);
     }
 }
