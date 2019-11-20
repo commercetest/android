@@ -12,7 +12,7 @@ android:
 
 before_install:
   - sudo apt-get update
-  - sudo apt-get -y install ninja-build
+  - sudo apt-get -y install ninja-build swig
 
 install:
   - echo y | sdkmanager "ndk-bundle"
