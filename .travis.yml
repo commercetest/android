@@ -1,5 +1,5 @@
 language: android
-dist: trusty
+dist: xenial
 
 git:
   submodules: false
@@ -12,14 +12,16 @@ android:
 
 before_install:
   - sudo apt-get update
-  - sudo apt-get -y install ninja-build swig
+  - sudo apt-get -y install ninja-build
 
 install:
+  - ./scripts/build_and_install_swig.sh
+  - export PATH=$PATH:/home/travis/build/commercetest/android/ThirdParty/swig-4.0.1/install/bin
+  - swig -version
   - echo y | sdkmanager "ndk-bundle"
 
 before_script:
   - export ANDROID_NDK_HOME=$ANDROID_HOME/ndk-bundle
 script:
   - git submodule update --init --recursive
-  - swig -version
   - ./gradlew assembleBasicRelease
