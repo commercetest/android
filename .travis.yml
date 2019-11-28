@@ -24,4 +24,4 @@ before_script:
   - export ANDROID_NDK_HOME=$ANDROID_HOME/ndk-bundle
 script:
   - git submodule update --init --recursive
-  - ./gradlew "assembleBasicRelease test"
+  - ./gradlew test
