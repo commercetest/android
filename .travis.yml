@@ -15,7 +15,7 @@ before_install:
   - sudo apt-get -y install ninja-build
 
 cache:
-  - /home/travis/build/commercetest/android/ThirdParty
+  - $TRAVIS_BUILD_DIR/ThirdParty
 
 env:
   - BUILD_TARGET=assembleBasicRelease
@@ -25,7 +25,7 @@ install:
   - echo $TRAVIS_BUILD_DIR
   - echo $HOME
   - ./scripts/build_and_install_swig.sh
-  - export PATH=$PATH:/home/travis/build/commercetest/android/ThirdParty/swig-4.0.1/install/bin
+  - export PATH=$PATH:$TRAVIS_BUILD_DIR/ThirdParty/swig-4.0.1/install/bin
   - swig -version
   - echo y | sdkmanager "ndk-bundle"
 
