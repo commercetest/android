@@ -15,8 +15,8 @@ before_install:
   - sudo apt-get -y install ninja-build
 
 env:
-  - BUILD_TARGET assembleBasicRelease
-  - BUILD_TARGET test
+  - BUILD_TARGET=assembleBasicRelease
+  - BUILD_TARGET=test
 
 install:
   - ./scripts/build_and_install_swig.sh
