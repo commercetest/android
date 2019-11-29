@@ -14,6 +14,10 @@ before_install:
   - sudo apt-get update
   - sudo apt-get -y install ninja-build
 
+env:
+  - BUILD_TARGET assembleBasicRelease
+  - BUILD_TARGET test
+
 install:
   - ./scripts/build_and_install_swig.sh
   - export PATH=$PATH:/home/travis/build/commercetest/android/ThirdParty/swig-4.0.1/install/bin
@@ -24,4 +28,4 @@ before_script:
   - export ANDROID_NDK_HOME=$ANDROID_HOME/ndk-bundle
 script:
   - git submodule update --init --recursive
-  - ./gradlew test
+  - "./gradlew $BUILD_TARGET"
