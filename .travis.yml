@@ -14,11 +14,16 @@ before_install:
   - sudo apt-get update
   - sudo apt-get -y install ninja-build
 
+cache:
+  - /home/travis/build/commercetest/android/ThirdParty
+
 env:
   - BUILD_TARGET=assembleBasicRelease
   - BUILD_TARGET=test
 
 install:
+  - echo $TRAVIS_BUILD_DIR
+  - echo $HOME
   - ./scripts/build_and_install_swig.sh
   - export PATH=$PATH:/home/travis/build/commercetest/android/ThirdParty/swig-4.0.1/install/bin
   - swig -version
